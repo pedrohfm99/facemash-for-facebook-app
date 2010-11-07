@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Facebook Facemash</title>
+  </head>
+  <body>
+    <fb:login-button autologoutlink="true"></fb:login-button>
+
+    <table cellpadding="10" cellspacing="5">
+    <tr>
+    {% if current_user1 %}
+      <td class="pic1">
+      <p><a href="{{ current_user1.name }}"><img src="/img1"></img></a></p>
+      <p>{{ current_user1.id|escape }}</p>
+      <p>{{ current_user1.name|escape }}</p>
+      <p>{{ current_user1.about|escape }}</p>
+      <p>{{ current_user1.birthday|escape }}</p>
+      <p>{{ current_user1.work|escape }}</p>
+      <p>{{ current_user1.education|escape }}</p>
+      <p>{{ current_user1.location|escape }}</p>
+      </td>
+    {% endif %}
+
+    <td rowspan="2"><h3>VS</h3></td>
+
+    {% if current_user2 %}
+      <td class="pic2">
+<!--      <p><a href="{{ current_user2.name }}"><img src="http://graph.facebook.com/{{ current_user2.id }}/picture" width="400" height="300"/></a></p>-->
+      <p><a href="{{ current_user2.name }}"><img src="/img2"></img></a></p>
+      <p>{{ current_user2.id|escape }}</p>
+      <p>{{ current_user2.name|escape }}</p>
+      <p>{{ current_user2.about|escape }}</p>
+      <p>{{ current_user2.birthday|escape }}</p>
+      <p>{{ current_user2.work|escape }}</p>
+      <p>{{ current_user2.education|escape }}</p>
+      <p>{{ current_user2.location|escape }}</p>
+      </td>
+    {% endif %}
+    </tr>
+
+    <div id="fb-root"></div>
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({appId: '{{ 144264565621291 }}', status: true, cookie: true,
+                 xfbml: true});
+        FB.login(function(response){
+        }, {perms:'offline_access,read_stream,publish_stream,friends_about_me,friends_birthday,friends_education_history,friends_events,friends_groups,friends_hometown,friends_interests,friends_likes,friends_location,friends_notes,friends_online_presence,friends_photo_video_tags,friends_photos,friends_relationships,friends_relationship_details,friends_religion_politics,friends_status,friends_videos,friends_website,friends_work_history'});
+        FB.Event.subscribe('{% if current_user %}auth.logout{% else %}auth.login{% endif %}', function(response) {
+          alert("subscribe");
+          window.location.reload();
+        });
+      };
+      (function() {
+        var e = document.createElement('script');
+        e.type = 'text/javascript';
+        e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
+        e.async = true;
+        document.getElementById('fb-root').appendChild(e);
+      }());
+    </script>
+  </body>
+</html>
