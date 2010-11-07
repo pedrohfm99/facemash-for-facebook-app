@@ -39,8 +39,8 @@ class User(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     updated = db.DateTimeProperty(auto_now=True)
     name = db.StringProperty(required=True)
-    profile_pic = db.BlobProperty()
-    #about = db.StringProperty(required=False)
+    #profile_pic = db.BlobProperty()
+    about = db.StringProperty(required=False, multiline=True)
     #birthday = db.StringProperty(required=False)
     #work = db.TextProperty(required=False)
     #education = db.TextProperty(required=False)
@@ -75,14 +75,14 @@ class BaseHandler(webapp.RequestHandler):
                 index = random.randint(1, friend_length)-1
                 friend1 = friends["data"][index]
                 friend_profile = graph.get_object(str(friend1["id"]))
-                ppic = db.Blob(urlfetch.Fetch(
-                    "https://graph.facebook.com/" + str(friend1["id"]) + "/picture?type=large&width=400&height=300&" +
-                    cookie["access_token"]).content)
+                #ppic = db.Blob(urlfetch.Fetch(
+                #    "https://graph.facebook.com/" + str(friend1["id"]) + "/picture?type=large&width=400&height=300&" +
+                #    cookie["access_token"]).content)
                 user1 = User(key_name=str(friend1["id"]),
                                 id=str(friend1["id"]),
                                 name=friend1["name"],
-                                profile_pic = ppic,
-                                #about=friend_profile["about"],
+                                #profile_pic = ppic,
+                                about=friend_profile.get("about", ""),
                                 #birthday=friend_profile["birthday"],
                                 #work=str(friend_profile["work"]),
                                 #education=str(friend_profile["education"]),
@@ -110,14 +110,14 @@ class BaseHandler(webapp.RequestHandler):
                 index = random.randint(1, friend_length)-1
                 friend2 = friends["data"][index]
                 friend_profile = graph.get_object(str(friend2["id"]))
-                ppic = db.Blob(urlfetch.Fetch(
-                    "https://graph.facebook.com/" + str(friend2["id"]) + "/picture?type=large&width=400&height=300&" +
-                    cookie["access_token"]).content)
+                #ppic = db.Blob(urlfetch.Fetch(
+                #    "https://graph.facebook.com/" + str(friend2["id"]) + "/picture?type=large&width=400&height=300&" +
+                #    cookie["access_token"]).content)
                 user2 = User(key_name=str(friend2["id"]),
                             id=str(friend2["id"]),
                             name=friend2["name"],
-                            profile_pic = ppic,
-                            #about=friend_profile["about"],
+                            #profile_pic = ppic,
+                            about=friend_profile.get("about",""),
                             #birthday=friend_profile["birthday"],
                             #work=str(friend_profile["work"]),
                             #education=str(friend_profile["education"]),
@@ -131,7 +131,7 @@ class BaseHandler(webapp.RequestHandler):
 
 class HomeHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), "facemash.html")
+        path = os.path.join(os.path.dirname(__file__), "example.html")
         args = dict(current_user1=self.current_user1,
                     current_user2=self.current_user2,
                     facebook_app_id=FACEBOOK_APP_ID)
@@ -139,13 +139,13 @@ class HomeHandler(BaseHandler):
 
 class Image1(BaseHandler):
     def get(self):
-        self.response.headers['Content-Type'] = "image/jpeg"
-        self.response.out.write(self.current_user1.profile_pic)
+        self.response.headers['Content-Type'] = "text/plain"
+        self.response.out.write(self.current_user1.id)
 
 class Image2(BaseHandler):
     def get(self):
-        self.response.headers['Content-Type'] = "image/jpeg"
-        self.response.out.write(self.current_user2.profile_pic)
+        self.response.headers['Content-Type'] = "text/plain"
+        self.response.out.write(self.current_user2.id)
 
 def main():
     random.seed()
