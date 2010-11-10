@@ -34,20 +34,12 @@ from google.appengine.api import images
 from google.appengine.api import urlfetch
 
 
-class User(db.Model):
-    id = db.StringProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    updated = db.DateTimeProperty(auto_now=True)
-    name = db.StringProperty(required=True)
-    #profile_pic = db.BlobProperty()
-    about = db.StringProperty(required=False, multiline=True)
-    #birthday = db.StringProperty(required=False)
-    #work = db.TextProperty(required=False)
-    #education = db.TextProperty(required=False)
-    #location = db.TextProperty(required=False)
-    #relationship_status = db.StringProperty(required=False)
-    access_token = db.StringProperty(required=True)
-
+class User():
+    id = ""
+    name = ""
+    about = ""
+    access_token = ""
+    clicked = False
 
 class BaseHandler(webapp.RequestHandler):
     """Provides access to the active Facebook user in self.current_user
@@ -57,42 +49,32 @@ class BaseHandler(webapp.RequestHandler):
     user. See http://developers.facebook.com/docs/authentication/ for
     more information.
     """
+    cookie = None
     @property
     def current_user1(self):
         if not hasattr(self, "_current_user1"):
             self._current_user1 = None
-            cookie = facebook.get_user_from_cookie(
-                self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
-            if cookie:
+            if self.cookie == None :
+                self.cookie = facebook.get_user_from_cookie(
+                    self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
+            if self.cookie :
                 # Store a local instance of the user data so we don't need
                 # a round-trip to Facebook on every request
-                user = User.get_by_key_name(cookie["uid"])
-                #if not user:
-                graph = facebook.GraphAPI(cookie["access_token"])
-                profile = graph.get_object("me")
+                graph = facebook.GraphAPI(self.cookie["access_token"])
+                #profile = graph.get_object("me")
                 friends = graph.get_connections("me", "friends")
                 friend_length = len(friends["data"])
                 index = random.randint(1, friend_length)-1
                 friend1 = friends["data"][index]
-                friend_profile = graph.get_object(str(friend1["id"]))
+                #friend_profile = graph.get_object(str(friend1["id"]))
                 #ppic = db.Blob(urlfetch.Fetch(
                 #    "https://graph.facebook.com/" + str(friend1["id"]) + "/picture?type=large&width=400&height=300&" +
                 #    cookie["access_token"]).content)
-                user1 = User(key_name=str(friend1["id"]),
-                                id=str(friend1["id"]),
-                                name=friend1["name"],
-                                #profile_pic = ppic,
-                                about=friend_profile.get("about", ""),
-                                #birthday=friend_profile["birthday"],
-                                #work=str(friend_profile["work"]),
-                                #education=str(friend_profile["education"]),
-                                #location=str(friend_profile["location"]),
-                                #relationship_status=friend_profile["relationship_status"],
-                                access_token=cookie["access_token"])
-                user1.put()
-                #elif user.access_token != cookie["access_token"]:
-                #    user.access_token = cookie["access_token"]
-                #    user.put()
+                user1 = User()
+                user1.id = friend1["id"]
+                user1.name = friend1["name"]
+                #user1.about = friend_profile.get("about", "")
+                user1.access_token = self.cookie["access_token"]
                 self._current_user1 = user1
         return self._current_user1
 
@@ -100,59 +82,45 @@ class BaseHandler(webapp.RequestHandler):
     def current_user2(self):
         if not hasattr(self, "_current_user2") :
             self._current_user2 = None
-            cookie = facebook.get_user_from_cookie(
-                self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
-            if cookie:
-                graph = facebook.GraphAPI(cookie["access_token"])
-                profile = graph.get_object("me")
+            if self.cookie == None :
+                self.cookie = facebook.get_user_from_cookie(
+                    self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
+            if self.cookie:
+                graph = facebook.GraphAPI(self.cookie["access_token"])
+                #profile = graph.get_object("me")
                 friends = graph.get_connections("me", "friends")
                 friend_length = len(friends["data"])
                 index = random.randint(1, friend_length)-1
                 friend2 = friends["data"][index]
-                friend_profile = graph.get_object(str(friend2["id"]))
+                #friend_profile = graph.get_object(str(friend2["id"]))
                 #ppic = db.Blob(urlfetch.Fetch(
                 #    "https://graph.facebook.com/" + str(friend2["id"]) + "/picture?type=large&width=400&height=300&" +
                 #    cookie["access_token"]).content)
-                user2 = User(key_name=str(friend2["id"]),
-                            id=str(friend2["id"]),
-                            name=friend2["name"],
-                            #profile_pic = ppic,
-                            about=friend_profile.get("about",""),
-                            #birthday=friend_profile["birthday"],
-                            #work=str(friend_profile["work"]),
-                            #education=str(friend_profile["education"]),
-                            #location=str(friend_profile["location"]),
-                            #relationship_status=friend_profile["relationship_status"],
-                            access_token=cookie["access_token"])
-                user2.put()
+                user2 = User()
+                user2.id = friend2["id"]
+                user2.name = friend2["name"]
+                #user2.about = friend_profile.get("about","")
+                user2.access_token = self.cookie["access_token"]
                 self._current_user2 = user2
         return self._current_user2
-
+    
 
 class HomeHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), "example.html")
+        path = os.path.join(os.path.dirname(__file__), "facemash.html")
         args = dict(current_user1=self.current_user1,
                     current_user2=self.current_user2,
+                    user1_clicked=self.request.get("user1"),
+                    user2_clicked=self.request.get("user2"),
                     facebook_app_id=FACEBOOK_APP_ID)
         self.response.out.write(template.render(path, args))
 
-class Image1(BaseHandler):
-    def get(self):
-        self.response.headers['Content-Type'] = "text/plain"
-        self.response.out.write(self.current_user1.id)
-
-class Image2(BaseHandler):
-    def get(self):
-        self.response.headers['Content-Type'] = "text/plain"
-        self.response.out.write(self.current_user2.id)
+    def post(self):
+        self.get()
 
 def main():
     random.seed()
-    util.run_wsgi_app(webapp.WSGIApplication([(r"/", HomeHandler),
-                                              (r"/img1", Image1),
-                                              (r"/img2", Image2)]))
-
+    util.run_wsgi_app(webapp.WSGIApplication([(r"/", HomeHandler)]))
 
 if __name__ == "__main__":
     main()

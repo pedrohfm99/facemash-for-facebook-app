@@ -11,14 +11,15 @@
     <tr>
     {% if current_user1 %}
       <td class="pic1">
-      <p><a href="{{ current_user1.name }}"><img src="http://graph.facebook.com/{{ current_user1.id }}/picture?type=large" width="400" height="300"/></a></p>
+      <form action="" method="post"/>
+        <p><input name="user1" type="image" src="http://graph.facebook.com/{{ current_user1.id }}/picture?type=large" width="400" height="300"/></p>
+        {% if user1_clicked %}
+        <p>{{ current_user1.name|escape }} clicked!!!</p>
+        {% endif %}
+      </form>
       <p>{{ current_user1.id|escape }}</p>
       <p>{{ current_user1.name|escape }}</p>
       <p>{{ current_user1.about|escape }}</p>
-      <p>{{ current_user1.birthday|escape }}</p>
-      <p>{{ current_user1.work|escape }}</p>
-      <p>{{ current_user1.education|escape }}</p>
-      <p>{{ current_user1.location|escape }}</p>
       </td>
     {% endif %}
 
@@ -26,14 +27,15 @@
 
     {% if current_user2 %}
       <td class="pic2">
-      <p><a href="{{ current_user2.name }}"><img src="http://graph.facebook.com/{{ current_user2.id }}/picture?type=large" width="400" height="300"/></a></p>
+      <form action="" method="post"/>
+        <p><input name="user2" type="image" src="http://graph.facebook.com/{{ current_user2.id }}/picture?type=large" width="400" height="300"/></p>
+        {% if user2_clicked %}
+        <p>{{ current_user2.name|escape }} clicked!!!</p>
+        {% endif %}
+      </form>
       <p>{{ current_user2.id|escape }}</p>
       <p>{{ current_user2.name|escape }}</p>
       <p>{{ current_user2.about|escape }}</p>
-      <p>{{ current_user2.birthday|escape }}</p>
-      <p>{{ current_user2.work|escape }}</p>
-      <p>{{ current_user2.education|escape }}</p>
-      <p>{{ current_user2.location|escape }}</p>
       </td>
     {% endif %}
     </tr>
