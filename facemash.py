@@ -33,13 +33,6 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import images
 from google.appengine.api import urlfetch
 
-num_friends = 0
-ids = list()
-initialized = False
-user1_clicked = False
-user2_clicked = False
-prev_user1 = None
-prev_user2 = None
 
 class User(db.Model):
     id = db.StringProperty(required=True)
@@ -55,14 +48,21 @@ class BaseHandler(webapp.RequestHandler):
     user. See http://developers.facebook.com/docs/authentication/ for
     more information.
     """
+    num_friends = 0
+    ids = list()
+    user1_clicked = False
+    user2_clicked = False
+    prev_user1 = None
+    prev_user2 = None
+    initialized = False
+
     def initializeDB(self):
-        global num_friends, ids
         self.cookie = facebook.get_user_from_cookie(
             self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         if self.cookie :
             graph = facebook.GraphAPI(self.cookie["access_token"])
             friends = graph.get_connections("me", "friends")
-            num_friends = len(friends["data"])
+            self.__class__.num_friends = len(friends["data"])
             for friend in friends["data"] :
                 user = User(key_name=str(friend["id"]),
                             id=str(friend["id"]),
@@ -70,38 +70,36 @@ class BaseHandler(webapp.RequestHandler):
                             score=0,
                             access_token=self.cookie["access_token"])
                 user.put()
-                ids.append(str(friend["id"]))
+                self.__class__.ids.append(str(friend["id"]))
        
     @property
     def current_user1(self):
-        global num_friends, ids, user1_clicked, prev_user1
         if not hasattr(self, "_current_user1"):
-            if user1_clicked:
-                self._current_user1 = prev_user1
+            if self.__class__.user1_clicked:
+                self._current_user1 = self.__class__.prev_user1
             else:
                 self._current_user1 = None
-                index = random.randint(1, num_friends)-1
-                id = ids[index]
+                index = random.randint(1, self.__class__.num_friends)-1
+                id = self.__class__.ids[index]
                 query = User.gql("where id = :1", id)
                 user1 = query.get()
                 self._current_user1 = user1
-                prev_user1 = user1
+                self.__class__.prev_user1 = user1
         return self._current_user1
 
     @property
     def current_user2(self):
-        global num_friends, ids, user2_clicked, prev_user2
         if not hasattr(self, "_current_user2"):
-            if user2_clicked:
-                self._current_user2 = prev_user2
+            if self.__class__.user2_clicked:
+                self._current_user2 = self.__class__.prev_user2
             else:
                 self._current_user2 = None
-                index = random.randint(1, num_friends)-1
-                id = ids[index]
+                index = random.randint(1, self.__class__.num_friends)-1
+                id = self.__class__.ids[index]
                 query = User.gql("where id = :1", id)
                 user2 = query.get()
                 self._current_user2 = user2
-                prev_user2 = user2
+                self.__class__.prev_user2 = user2
         return self._current_user2
 
     @property
@@ -116,30 +114,28 @@ class BaseHandler(webapp.RequestHandler):
 
 class HomeHandler(BaseHandler):
     def get(self):
-        global initialized, user1_clicked, user2_clicked
-        if initialized == False:
+        if self.__class__.initialized == False:
             self.initializeDB()
-            initialized = True
+            self.__class__.initialized = True
         path = os.path.join(os.path.dirname(__file__), "facemash.html")
         args = dict(current_user1=self.current_user1,
                     current_user2=self.current_user2,
                     current_user1_rank=self.current_user1_rank,
                     current_user2_rank=self.current_user2_rank,
-                    user1clicked=user1_clicked,
-                    user2clicked=user2_clicked,
+                    user1clicked=self.__class__.user1_clicked,
+                    user2clicked=self.__class__.user2_clicked,
                     facebook_app_id=FACEBOOK_APP_ID)
         self.response.out.write(template.render(path, args))
 
     def post(self):
-        global user1_clicked, user2_clicked
         if self.request.get("clicked") == "user1" :
-            user1_clicked = True
-            user2_clicked = False
+            self.__class__.user1_clicked = True
+            self.__class__.user2_clicked = False
             # (winner, looser)
             self.update_ranking(self.current_user1.score, self.current_user2.score, 0)
         if self.request.get("clicked") == "user2" :
-            user2_clicked = True
-            user1_clicked = False
+            self.__class__.user2_clicked = True
+            self.__class__.user1_clicked = False
             self.update_ranking(self.current_user2.score, self.current_user1.score, 1)
         self.get()
 
