@@ -38,7 +38,10 @@ class User(db.Model):
     id = db.StringProperty(required=True)
     name = db.StringProperty(required=True)
     score = db.IntegerProperty(required=True)
-    access_token = db.StringProperty(required=True)
+    about = db.TextProperty(default="", indexed=False)
+    hometown = db.StringProperty(default="")
+    location = db.StringProperty(default="")
+    gender = db.StringProperty(default="")
 
 class BaseHandler(webapp.RequestHandler):
     """Provides access to the active Facebook user in self.current_user
@@ -64,11 +67,15 @@ class BaseHandler(webapp.RequestHandler):
             friends = graph.get_connections("me", "friends")
             self.__class__.num_friends = len(friends["data"])
             for friend in friends["data"] :
+                profile = graph.get_object(str(friend["id"]))
                 user = User(key_name=str(friend["id"]),
                             id=str(friend["id"]),
                             name=friend["name"],
                             score=0,
-                            access_token=self.cookie["access_token"])
+                            about=profile.get("about", ""),
+                            hometown=profile.get("hometown", {"name":""})["name"],
+                            location=profile.get("location", {"name":""})["name"],
+                            gender=profile.get("gender", ""))
                 user.put()
                 self.__class__.ids.append(str(friend["id"]))
        
