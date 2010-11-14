@@ -1,0 +1,35 @@
+<td style="vertical-align:text-top;text-align:center" width="190">
+	<div id="image_">
+		<form action="/facemesh" method="post">
+			<p></p>
+			<p><input name="clicked" type="image" src="http://graph.facebook.com/{{ friend.id }}/picture?type=large" width="150" height="150" value="user1" /></p>
+			<p><font size="3"><a href="{{ escape(friend.profile_url) }}">{{ escape(friend.name) }}</a></font></p>
+		</form>
+	</div>
+	<div>
+		<p><font size="2"><a href="{{ escape(friend.profile_url) }}">{{ escape(friend.id) }}</a></font></p>
+		<div id="clear">
+		{% if user1_clicked %}
+			<p><font size="2">USER1 CLICKED!!</font></p>
+		{% end %}
+		</div>
+	</div>
+</td>
+<td style="vertical-align:middle;text-align:center" width="50">
+<p><big>VS</big></p>
+</td>
+<td style="vertical-align:text-top;text-align:center" width="190">
+	<div id="image_">
+		<form action="/facemesh" method="post">
+			<p></p>
+			<p><input name="clicked" type="image" src="http://graph.facebook.com/{{ friend2.id }}/picture?type=large" width="150" height="150" value="user2" /></p>
+			<p><font size="3"><a href="{{ escape(friend2.profile_url) }}">{{ escape(friend2.name) }}</a></font></p>
+		</form>
+	</div>
+	<div>
+		<p><font size="2"><a href="{{ escape(friend2.profile_url) }}">{{ escape(friend2.id) }}</a></font></p>
+		{% if user2_clicked %}
+			<p><font size="2">USER2 CLICKED!!</font></p>
+		{% end %}
+	</div>
+</td>

@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+		<title>Who has Better Pic?</title>
+		<link rel="stylesheet" href="{{ static_url("styles.css") }}" type="text/css"/>
+	</head>
+	<body>
+	<div id="wrap">
+		<div id="header">
+			<div id="logo">
+				<h1><a href="/">FaceBook</a></h1>
+			</div>
+			<div id="navi-top">
+				<ul>
+					{% if page == 0 %}
+					<li class="selected"><a href="/">Home</a></li>
+					{% else %}
+					<li><a href="/">Home</a></li>
+					{% end %}
+					{% if page == 2 %}
+					<li class="selected"><a href="/facemesh">Who Is Better?</a></li>
+					{% else %}
+					<li><a href="/facemesh">Who Is Better?</a></li>
+					{% end %}
+					{% if page == 4 %}
+					<li class="selected"><a href="/guess">Guess Who?</a></li>
+					{% else %}
+					<li><a href="/guess">Guess Who?</a></li>
+					{% end %}
+					{% if page == 3 %}
+					<li class="selected"><a href="/developers">About Us</a></li>
+					{% else %}
+					<li><a href="/developers">About Us</a></li>
+					{% end %}
+				</ul>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div id="main">
+			<div id="advertisement">
+				<!-- Banner Goes Here -->
+			</div>
+			{% if page == 0 %}
+			<div id="main-content">
+				<BR>
+				<p></p>
+				<h2>Introduction</h2>
+				<p></p>
+				<font size="3">
+				<p>Hi, we created this website to learn how to use Facebook API.</p>
+				<p>This site works best with Google Chrome Browser.</p>
+				</font>
+				<p></p>
+				<BR>
+				<h2>Who is better?</h2>
+				<p></p>
+				<font size="3">
+				<p>You are given two randomly selected profile pictures of your friends.</p>
+				<p>You can click on the profile pic you like to give them points.</p>
+				<p>All profiles are globally ranked and you can see rank of you and your friends.</p>
+				</font>
+				<p></p>
+				<BR>
+				<h2>Guess Who?</h2>
+				<p></p>
+				<font size="3">
+				<p>You are only given a profile picture and you need to guess who the person is.</p>
+				<p>You need to provide both first and last name to get points for yourself.</p>
+				</font>
+				<p></p>
+				<BR>
+				<h2>Questions?</h2>
+				<p></p>
+				<font size="3">
+				<p>If you have any suggestions or concerns, please e-mail us.</p>
+				<p>You can find contact information in About Us page.</p>
+				<p></p>
+				</font>
+				<p></p>
+			</div>
+			{% elif page == 2 %}
+			<div id="main-content" style="text-align:center">
+				<p></p>
+				<h2>Choose a picture!</h2>
+				<p></p>
+				<p></p>
+				<div id="content_table">
+					<table border="0">
+						<tr>
+						{% if has_friends %}
+						{{ modules.Friend() }}
+						</tr>
+						<tr>
+						{{ modules.Rank(1) }}
+						{{ modules.Rank(2) }}
+						{{ modules.Rank(3) }}
+						{{ modules.Rank(4) }}
+						{{ modules.Rank(5) }}
+						</tr>
+						<tr>
+						{{ modules.Count() }}
+						</tr>
+						{% else %}
+						<p><font size="3"><a href="{{ current_user.profile_url }}">YOU</a> have no friends.</font></p>
+						<p><font size="3">Go make some friends.</font></p>
+						</tr>
+						{% end %}
+					</table>
+				</div>
+				<p></p>
+			</div>
+			{% elif page == 3 %}
+			<div id="main-content" style="text-align:center">
+				<p></p>
+				<h2>Developers</h2>
+				<p></p>
+				<p></p>
+				<div id="content_table">
+					<table border="0">
+						<tr>
+						{{ modules.Developer() }}
+						</tr>
+					</table>
+				</div>
+				<p></p>
+			</div>
+			{% elif page == 4 %}
+			<div id="main-content" style="text-align:center">
+				<p></p>
+				<h2>Guess Who?!</h2>
+				<p></p>
+				<p></p>
+				<div id="content_table">
+					<table border="0">
+						<tr>
+						{% if has_friends %}
+						{{ modules.Guess() }}
+						</tr>
+						<tr>
+						{{ modules.Rank(1) }}
+						{{ modules.Rank(2) }}
+						{{ modules.Rank(3) }}
+						{{ modules.Rank(4) }}
+						{{ modules.Rank(5) }}
+						</tr>
+						<tr>
+						{{ modules.Count() }}
+						</tr>
+						{% else %}
+						<p><font size="3"><a href="{{ current_user.profile_url }}">YOU</a> have no friends.</font></p>
+						<p><font size="3">Go make some friends.</font></p>
+						</tr>
+						{% end %}
+					</table>
+				</div>
+				<p></p>
+			</div>
+			{% end %}
+			<div class="clear"></div>
+		</div>
+		<div class="footer">
+			<div class="copyright">
+				<p>Copyright &copy; 2010 by Sick Yoon & Sukwon Oh. All Rights Reserved.</p>
+			</div>
+		</div>
+	</div>
+	<div id="fb-root"></div>
+	<script>
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId: '{{ options.facebook_app_id }}', 
+				status: true, 
+				cookie: true, 
+				xfbml: true
+			});
+			FB.login( function(response) {
+				if (response.session) {
+					//alert("user logged in");
+					if (response.perms) {
+						//alert("Permission granted!");
+					} else {
+						//alert("Permission not granted!");
+						window.location="/auth/login";
+					}
+				} else {
+					//alert("logged in failed");
+				}
+			}, {perms: 'publish_stream, create_event, rsvp_event, sms, offline_access, publish_checkins, user_about_me, friends_about_me, user_activities, friends_activities, user_birthday, friends_birthday, user_education_history, friends_education_history, user_events, friends_events, user_groups, friends_groups, user_hometown, friends_hometown, user_interests, friends_interests, user_likes, friends_likes, user_location, friends_location, user_notes, friends_notes, user_online_presence, friends_online_presence, user_photo_video_tags, friends_photo_video_tags, user_photos, friends_photos, user_relationships, friends_relationships, user_relationship_details, friends_relationship_details, user_religion_politics, friends_religion_politics, user_status, friends_status, user_videos, friends_videos, user_website, friends_website, user_work_history, friends_work_history, email, read_friendlists, read_insights, read_requests, read_stream, xmpp_login, user_checkins, friends_checkins'});
+			FB.Event.subscribe('auth.logout', function(response){
+				//alert("User logged out!");
+				window.location="/auth/login";
+			});
+		};
+		(function() {
+			var e = document.createElement('script');
+			e.type = 'text/javascript';
+			e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
+			e.async = true;
+			document.getElementById('fb-root').appendChild(e);
+		}() );
+	</script>
+	</body>
+</html>

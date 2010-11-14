@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+		<title>Login Page</title>
+	</head>
+	<body>
+		<fb:login-button autologoutlink="true"></fb:login-button>
+		<div id="fb-root"></div>
+		<script>
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId: '{{ options.facebook_app_id }}', 
+					status: true, 
+					cookie: true, 
+					xfbml: true
+				});
+				FB.login( function(response) {
+					if (response.session) {
+						//alert("user logged in");
+						window.location="/"
+						if (response.perms) {
+							//alert("Permission granted!");
+						} else {
+							//alert("Permission not granted!");
+						}
+					} else {
+						//alert("logged in failed");
+						window.location="/auth/login"
+					}
+				}, {perms: 'publish_stream, create_event, rsvp_event, sms, offline_access, publish_checkins, user_about_me, friends_about_me, user_activities, friends_activities, user_birthday, friends_birthday, user_education_history, friends_education_history, user_events, friends_events, user_groups, friends_groups, user_hometown, friends_hometown, user_interests, friends_interests, user_likes, friends_likes, user_location, friends_location, user_notes, friends_notes, user_online_presence, friends_online_presence, user_photo_video_tags, friends_photo_video_tags, user_photos, friends_photos, user_relationships, friends_relationships, user_relationship_details, friends_relationship_details, user_religion_politics, friends_religion_politics, user_status, friends_status, user_videos, friends_videos, user_website, friends_website, user_work_history, friends_work_history, email, read_friendlists, read_insights, read_requests, read_stream, xmpp_login, user_checkins, friends_checkins'});
+			};
+			(function() {
+				var e = document.createElement('script');
+				e.type = 'text/javascript';
+				e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
+				e.async = true;
+				document.getElementById('fb-root').appendChild(e);
+			}() );
+		</script>
+	</body>
+</html>
