@@ -89,7 +89,7 @@
 					<table border="0">
 						<tr>
 						{% if has_friends %}
-						{{ modules.Friend() }}
+						{{ modules.Friend(current_user) }}
 						</tr>
 						<tr>
 						{{ modules.Rank(1) }}
@@ -99,7 +99,7 @@
 						{{ modules.Rank(5) }}
 						</tr>
 						<tr>
-						{{ modules.Count() }}
+						{{ modules.Count(current_user) }}
 						</tr>
 						{% else %}
 						<p><font size="3"><a href="{{ current_user.profile_url }}">YOU</a> have no friends.</font></p>
@@ -135,7 +135,7 @@
 					<table border="0">
 						<tr>
 						{% if has_friends %}
-						{{ modules.Guess() }}
+						{{ modules.Guess(current_user) }}
 						</tr>
 						<tr>
 						{{ modules.Rank(1) }}
@@ -145,7 +145,7 @@
 						{{ modules.Rank(5) }}
 						</tr>
 						<tr>
-						{{ modules.Count() }}
+						{{ modules.Count(current_user) }}
 						</tr>
 						{% else %}
 						<p><font size="3"><a href="{{ current_user.profile_url }}">YOU</a> have no friends.</font></p>

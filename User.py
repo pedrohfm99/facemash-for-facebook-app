@@ -1,10 +1,6 @@
 class User:
-	_currentUser = None
-	_user1_clicked = False
-	_user2_clicked = False
-	_count = 0
-	_friend1 = None
-	_friend2 = None
+	_userlists = dict()
+	_friendlists = dict()
 
 	def __init__(self, id, name, profile_url, about=None, birthday=None, hometown=None):
 		self.id = id
@@ -14,58 +10,28 @@ class User:
 		self.birthday = birthday
 		self.hometown = hometown
 		self.score = 0
+		self.user1Clicked = False
+		self.user2Clicked = False
+		self.count = 0
+		self.friend1 = None
+		self.friend2 = None
 
 	@classmethod
-	def currentUser(cls):
-		return cls._currentUser
+	def getCurrentUser(cls, id):
+		# returns None if user for given id is not present
+		return cls._userlists.get(id, None);
 
 	@classmethod
-	def setCurrentUser(cls, user):
-		cls._currentUser = user
+	def addCurrentUser(cls, id, user):
+		# id = facebookID
+		# user = internal user object
+		cls._userlists[id] = user;
 
 	@classmethod
-	def user1Clicked(cls):
-		if cls._user1_clicked:
-			return True
-		else:
-			return False
+	def getCurrentUserFriendList(cls, id):
+		# returns None if friendlists for given user id is not present
+		return cls._friendlists.get(id, None)
 
 	@classmethod
-	def user2Clicked(cls):
-		if cls._user2_clicked:
-			return True
-		else:
-			return False
-
-	@classmethod
-	def setUserClicked(cls, i):
-		if i == 1:
-			cls._user1_clicked = True
-			cls._user2_clicked = False
-		elif i == 2:
-			cls._user1_clicked = False
-			cls._user2_clicked = True
-
-	@classmethod
-	def count(cls):
-		return cls._count
-
-	@classmethod
-	def setCount(cls, count):
-		cls._count = count
-
-	@classmethod
-	def friend1(cls):
-		return cls._friend1
-
-	@classmethod
-	def setFriend1(cls, friend1):
-		cls._friend1 = friend1
-
-	@classmethod
-	def friend2(cls):
-		return cls._friend2
-
-	@classmethod
-	def setFriend2(cls, friend2):
-		cls._friend2 = friend2
+	def addCurrentUserFriendList(cls, id, friendlist):
+		cls._friendlists[id] = friendlist

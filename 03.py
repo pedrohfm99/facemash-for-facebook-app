@@ -39,20 +39,22 @@ class BaseHandler(tornado.web.RequestHandler):
 			cookies, options.facebook_app_id, options.facebook_app_secret)
 		return cookie
 
-	def initializeCurrentUser(self):
+	def addCurrentUser(self):
 		cookie = self.getCookie()
 		Common.setGraph(facebook.GraphAPI(cookie["access_token"]))
 		profile = Common.graph().get_object("me")
 		friends = Common.graph().get_connections("me", "friends")
-		# set currentUser to me
-		User.setCurrentUser(User(str(profile["id"]),
-								profile["name"],
-								profile.get("link", ""),
-								profile.get("about", ""),
-								profile.get("birthday", ""),
-								profile.get("hometown", {"name":""})["name"]))
+		User.addCurrentUser(profile["id"], 
+								User(str(profile["id"]),
+									profile["name"],
+									profile.get("link", ""),
+									profile.get("about", ""),
+									profile.get("birthday", ""),
+									profile.get("hometown", {"name":""})["name"]))
+		User.addCurrentUserFriendList(profile["id"],
+										friends["data"])
 
-	def initializeDB(self):
+	'''def initializeDB(self):
 		cookie = self.getCookie()
 		Common.setGraph(facebook.GraphAPI(cookie["access_token"]))
 		profile = Common.graph().get_object("me")
@@ -83,45 +85,51 @@ class BaseHandler(tornado.web.RequestHandler):
 				profile.get("birthday", ""),
 				profile.get("hometown", {"name":""})["name"])
 			DB.execute("insert into friends (fid, name, score) values (?, ?, ?)", profile["id"], profile["name"], 0)
-		
+	'''	
 	def get_current_user(self):
-		if Common.initialized() == False:
-			#self.initializeDB()
-			self.initializeCurrentUser()
-			Common.setInitialized(True)
-		return User.currentUser()
+		cookie = self.getCookie()
+		self.addCurrentUser()
+		return User.getCurrentUser(cookie["uid"])
 
 class MainHandler(BaseHandler):
 	def get(self):
-		if User.currentUser() is None:
+		cookie = self.getCookie()
+		currentUser = User.getCurrentUser(cookie["uid"])
+		if currentUser is None:
 			self.redirect("/auth/login")
 			return
 		page = 0
 		has_friends = False
-		cursor = DB.execute("select count(*) from friends")
+		'''cursor = DB.execute("select count(*) from friends")
 		row = DB.fetchone(cursor)
 		if row is None:
 			has_friends = False
 		else:
+			has_friends = True'''
+		if len(User.getCurrentUserFriendList(cookie["uid"])) > 0:
 			has_friends = True
-		self.render("template.html", options=options, page = page, current_user=User.currentUser(), count=User.count(), has_friends = has_friends);
+		self.render("template.html", options=options, page = page, current_user=currentUser, count=currentUser.count, has_friends = has_friends);
 
 class FaceHandler(BaseHandler):
 	def get(self):
-		if User.currentUser() is None:
+		cookie = self.getCookie()
+		currentUser = User.getCurrentUser(cookie["uid"])
+		if currentUser is None:
 			self.redirect("/auth/login")
 			return
 		page = 2
-		User.setCount(User.count()+1)
-		self.render("template.html", options=options, page = page, current_user=User.currentUser(), has_friends = True);
+		currentUser.count += 1
+		self.render("template.html", options=options, page = page, current_user=currentUser, has_friends = True);
 	
 	def post(self):
 		if str(self.get_argument("clicked")) == "user1":
-			User.setUserClicked(1)
-			update_ranking(User.friend1(), User.friend2())
+			currentUser.user1Clicked = True
+			currentUser.user2Clicked = False
+			update_ranking(currentUser.friend1, currentUser.friend2)
 		elif str(self.get_argument("clicked")) == "user2":
-			User.setUserClicked(2)
-			update_ranking(User.friend2(), User.friend1())
+			currentUser.user1Clicked = False
+			currentUser.user2Clicked = True
+			update_ranking(currentUser.friend2, currentUser.friend1)
 		self.redirect("/facemesh")
 
 class LoginHandler(BaseHandler):
@@ -131,27 +139,33 @@ class LoginHandler(BaseHandler):
 
 class DeveloperHandler(BaseHandler):
 	def get(self):
-		if User.currentUser() is None:
+		cookie = self.getCookie()
+		currentUser = User.getCurrentUser(cookie["uid"])
+		if currentUser is None:
 			self.redirect("/auth/login")
 			return
 		page = 3
-		self.render("template.html", options=options, page=page, current_user=User.currentUser(), count=User.count(), has_friends = True);
+		self.render("template.html", options=options, page=page, current_user=currentUser, count=currentUser.count, has_friends = True);
 
 class GuessHandler(BaseHandler):
 	def get(self):
-		if User.currentUser() is None:
+		cookie = self.getCookie()
+		currentUser = User.getCurrentUser(cookie["uid"])
+		if currentUser is None:
 			self.redirect("/auth/login")
 			return
 		page = 4
-		User.setCount(User.count()+1)
+		currentUser.count += 1
 		has_friends = False
-		cursor = DB.execute("select count(*) from friends")
+		'''cursor = DB.execute("select count(*) from friends")
 		row = DB.fetchone(cursor)
 		if row is None:
 			has_friends = False
 		else:
+			has_friends = True'''
+		if len(User.getCurrentUserFriendList(cookie["uid"])) > 0:
 			has_friends = True
-		self.render("template.html", options=options, page=page, current_user=User.currentUser(), has_friends = has_friends);
+		self.render("template.html", options=options, page=page, current_user=currentUser, has_friends = has_friends);
 	
 	def post(self):
 		if str(self.get_argument("post_name")) == mystery["name"]:
@@ -165,35 +179,47 @@ class GuessHandler(BaseHandler):
 		self.redirect("/guess")
 
 class CountModule(tornado.web.UIModule):
-	def render(self):
-		if User.count() < 50:		count_message = ""
-		elif User.count() < 100:	count_message = "You're awesome!\n You played " + str(User.count()) + " times."
-		elif User.count() < 500:	count_message = "You are bored.. aren't ya?\n You played " + str(User.count()) + " times."
-		elif User.count() < 1000:	count_message = "Having fun? " + str(User.count()) + " times."
-		elif User.count() >= 1000:	count_message = "... " + str(User.count())
-		else:				count_message = "Are you trying something funny? We are watching you! " + str(User.count())
-		return self.render_string("modules/count.html", count=User.count(), count_message=count_message)
+	def render(self, currentUser):
+		if currentUser.count < 50:
+			count_message = ""
+		elif currentUser.count < 100:
+			count_message = "You're awesome!\n You played " + \
+								str(currentUser.count) + " times."
+		elif currentUser.count < 500:
+			count_message = "You are bored.. aren't ya?\n You played " + \
+								str(currentUser.count) + " times."
+		elif currentUser.count < 1000:
+			count_message = "Having fun? " + str(currentUser.count) + " times."
+		elif currentUser.count >= 1000:
+			count_message = "... " + str(currentUser.count)
+		else:
+			count_message = "Are you trying something funny? We are watching you! " + \
+								str(currentUser.count)
+		return self.render_string("modules/count.html", count=currentUser.count,
+					count_message=count_message)
 
 class RankModule(tornado.web.UIModule):
 	def render(self, rank):
 		# Get appropriate RANK ID FROM DATABASE
 		# FOR NOW JUST PLUGIN TO FRIEND LIST
-		cursor = DB.execute("select fid, name from friends order by score desc limit 5;")
+		cursor = DB.execute("select fid, name from profile order by score desc limit 5;")
 		for i in range(0, rank):
 			row = DB.fetchone(cursor)
 
-		cursor2 = DB.execute("select profile_url from profile where fid = ?", row[0])
-		row2 = DB.fetchone(cursor2)
-		power_user = User(
-			id = str(row[0]),
-			name = row[1],
-			profile_url = row2[0]
-		)
+		power_user = None
+		if row != None:
+			power_user = User(
+							id = str(row[0]),
+							name = row[1]
+							)
 		return self.render_string("modules/rank.html", power_user=power_user)
 
 class GuessModule(tornado.web.UIModule):
-	def render(self):
-		cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 1;")
+	def render(self, currentUser):
+		friendlist = User.getCurrentUserFriendList(currentUser.id)
+		num_friends = len(friendlist)
+		index = random.randint(0, num_friends-1)
+		'''cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 1;")
 		row = DB.fetchone(cursor)
 		mystery = User(
 			id = str(row[0]),
@@ -202,15 +228,30 @@ class GuessModule(tornado.web.UIModule):
 			about = row[3],
 			birthday = row[4],
 			hometown = row[5]
-		)
+		)'''
+		mystery = User(
+					id = str(friendlist[index]["id"]),
+					name = friendlist[index]["name"],
+					profile_url = "",
+					about = "",
+					birthday = "",
+					hometown = ""
+					)
+
+		# check if exists in DB; if not store
+		cursor = DB.execute("select id from profile where id = ?", mystery.id)
+		row = DB.fetchone(cursor)
+		if len(row) == 0:
+			DB.execute("insert into profile(fid, name) values (?, ?)",
+				mystery.id, mystery.name)
 		return self.render_string("modules/guess.html", mystery=mystery)
 
 class FriendModule(tornado.web.UIModule):
-	def render(self):
-		if User.user1Clicked():
-			friend1 = User.friend1()
+	def render(self, currentUser):
+		if currentUser.user1Clicked:
+			pass
 		else:
-			cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 1;")
+			'''cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 1;")
 			row = DB.fetchone(cursor)
 			friend1 = User(
 				id = str(row[0]),
@@ -219,12 +260,28 @@ class FriendModule(tornado.web.UIModule):
 				about = row[3],
 				birthday = row[4],
 				hometown = row[5],
-			)
-			User.setFriend1(friend1)
-		if User.user2Clicked():
-			friend2 = User.friend2()
+			)'''
+			friendlist = User.getCurrentUserFriendList(currentUser.id)
+			index = random.randint(0, len(friendlist)-1)
+			friend1 = User(
+						id = str(friendlist[index]["id"]),
+						name = friendlist[index]["name"],
+						profile_url = "",
+						about = "",
+						birthday = "",
+						hometown = ""
+						)
+			# check if exists in DB; if not store
+			cursor = DB.execute("select id from profile where id = ?", friend1.id)
+			row = DB.fetchone(cursor)
+			if row != None and len(row) == 0:
+				DB.execute("insert into profile (fid, name) values (?, ?)",
+						friend1.id, friend1.name)
+			currentUser.friend1 = friend1
+		if currentUser.user2Clicked:
+			pass
 		else:
-			cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 2;")
+			'''cursor = DB.execute("select fid, name, profile_url, about, birthday, hometown from profile order by random() limit 2;")
 			row = DB.fetchone(cursor)
 			if row[0] == int(friend1.id):
 				row = DB.fetchone(cursor)
@@ -235,13 +292,32 @@ class FriendModule(tornado.web.UIModule):
 				about = row[3],
 				birthday = row[4],
 				hometown = row[5]
-			)
-			User.setFriend2(friend2)
-		return self.render_string("modules/friend.html", friend=friend1, friend2=friend2, user1_clicked=User.user1Clicked(), user2_clicked=User.user2Clicked())
+			)'''
+			friendlist = User.getCurrentUserFriendList(currentUser.id)
+			index = random.randint(0, len(friendlist)-1)
+			friend2 = User(
+						id = str(friendlist[index]["id"]),
+						name = friendlist[index]["name"],
+						profile_url = "",
+						about = "",
+						birthday = "",
+						hometown = ""
+						)
+			cursor = DB.execute("select id from profile where id = ?", friend2.id)
+			row = DB.fetchone(cursor)
+			if len(row) == 0:
+				DB.execute("insert into profile(fid, name) values (?, ?)",
+					friend2.id, friend2.name)
+			currentUser.friend2 = friend2
+		return self.render_string("modules/friend.html",
+					friend=currentUser.friend1,
+					friend2=currentUser.friend2,
+					user1_clicked=currentUser.user1Clicked,
+					user2_clicked=currentUser.user2Clicked)
 
 class DeveloperModule(tornado.web.UIModule):
 	def render(self):
-		cursor = DB.execute("select * from profile where fid = ?", 503655210)
+		'''cursor = DB.execute("select * from profile where fid = ?", 503655210)
 		row = DB.fetchone(cursor)
 		developer = User(
 			id = str(row[1]),
@@ -260,7 +336,9 @@ class DeveloperModule(tornado.web.UIModule):
 			about = row[4],
 			birthday = row[5],
 			hometown = row[6]
-		)
+		)'''
+		developer = User.getCurrentUser(503655210)
+		developer = User.getCurrentUser(122609369)
 		return self.render_string("modules/developers.html", developer=developer, developer2=developer2)
 
 class Application(tornado.web.Application):
@@ -340,7 +418,7 @@ def main():
 	#DB.execute("drop table friends")	# table used for facemash
 	#DB.execute("drop table profile")	# table used for detailed profile
 	#DB.execute("create table friends(id integer primary key, fid integer, name text, score integer)")
-	#DB.execute("create table profile(id integer primary key, fid integer, name text, profile_url text, about text, birthday text, hometown text)")
+	DB.execute("create table profile(id integer primary key, fid integer, name text, profile_url text, about text, birthday text, hometown text)")
 	tornado.options.parse_command_line()
 	http_server = tornado.httpserver.HTTPServer(Application())
 	http_server.listen(options.port)
